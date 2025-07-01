@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Markdown } from 'src/components/Markdown';
 
 describe('Markdown component', () => {
@@ -31,5 +31,34 @@ describe('Markdown component', () => {
     const markdownImage = screen.getByRole<HTMLImageElement>('img');
     expect(markdownImage).toBeInTheDocument();
     expect(markdownImage.src).toBe(imageUrl);
+  });
+
+  it.each`
+    language
+    ${'js'}
+    ${'python'}
+    ${'java'}
+    ${'c'}
+  `('renders a copy button for code blocks and copies code to clipboard', ({ language }) => {
+    const code = 'console.log("Hello, world!")';
+    render(<Markdown>{'```' + language + '\n' + code + '\n```'}</Markdown>);
+
+    // The copy button should be present
+    const copyButton = screen.getByRole('button', { name: /copy/i });
+    expect(copyButton).toBeInTheDocument();
+
+    // Mock clipboard
+    const originalClipboard = { ...globalThis.navigator.clipboard };
+    const writeText = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    globalThis.navigator.clipboard = { writeText };
+
+    copyButton.click();
+    expect(writeText).toHaveBeenCalledWith(code);
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    globalThis.navigator.clipboard = originalClipboard;
   });
 });

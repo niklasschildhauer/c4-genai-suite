@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import type React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -88,10 +90,27 @@ function LinkRenderer({ href, children }: React.AnchorHTMLAttributes<HTMLAnchorE
 function Code(props: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>) {
   const { children, className, ref: _, ...other } = props;
   const match = /language-(\w+)/.exec(className || '');
+  const [copied, setCopied] = useState(false);
+
+  const codeString = typeof children === 'string' ? children.replace(/\n$/, '') : '';
+
+  const handleCopy = async () => {
+    if (codeString) {
+      await navigator.clipboard.writeText(codeString);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
   return match && typeof children === 'string' ? (
-    <Prism {...other} language={match[1]} style={vscDarkPlus} customStyle={{ backgroundColor: 'transparent', padding: 0 }}>
-      {children.replace(/\n$/, '')}
-    </Prism>
+    <div style={{ position: 'relative' }}>
+      <button type="button" aria-label="Copy" onClick={handleCopy} style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+        {copied ? 'Copied!' : 'Copy'}
+      </button>
+      <Prism {...other} language={match[1]} style={vscDarkPlus} customStyle={{ backgroundColor: 'transparent', padding: 0 }}>
+        {codeString}
+      </Prism>
+    </div>
   ) : (
     <code {...other} className={cn(className, 'overflow-auto')}>
       {children}
